@@ -50,6 +50,7 @@ async function run() {
     const database = client.db("FitQuestDB");
     const classes = database.collection("classes");
     const trainers = database.collection("trainers");
+    const testimonials = database.collection("testimonials");
 
     /**
      * =============================================
@@ -59,6 +60,11 @@ async function run() {
 
     app.get("/classes", async (req, res) => {
       const result = await classes.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/testimonials", async (req, res) => {
+      const result = await testimonials.find().toArray();
       res.send(result);
     });
 
@@ -93,7 +99,6 @@ async function run() {
       });
 
       console.log(featuredData);
-      //   res.send(topClasses);
       res.send(featuredData);
     });
   } finally {
