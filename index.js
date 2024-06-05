@@ -60,6 +60,15 @@ async function run() {
       const result = await classes.find().toArray();
       res.send(result);
     });
+
+    // get 6 classes bases on highest total bookings using $sort aggregation
+
+    app.get("/featured", async (req, res) => {
+      const pipeline = [{ $sort: { totalBookings: -1 } }, { $limit: 6 }];
+
+      const result = await classes.aggregate(pipeline).toArray();
+      res.send(result);
+    });
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
