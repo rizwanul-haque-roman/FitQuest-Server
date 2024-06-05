@@ -41,9 +41,28 @@ async function run() {
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
+
+    /**
+     * =============================================
+     *            DATABASE & COLLECTION
+     * =============================================
+     */
+    const database = client.db("FitQuestDB");
+    const classes = database.collection("classes");
+
+    /**
+     * =============================================
+     *                GET API
+     * =============================================
+     */
+
+    app.get("/classes", async (req, res) => {
+      const result = await classes.find().toArray();
+      res.send(result);
+    });
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    // await client.close();
   }
 }
 run().catch(console.dir);
