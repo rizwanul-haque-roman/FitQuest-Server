@@ -49,6 +49,7 @@ async function run() {
      */
     const database = client.db("FitQuestDB");
     const classes = database.collection("classes");
+    const trainers = database.collection("trainers");
 
     /**
      * =============================================
@@ -64,10 +65,36 @@ async function run() {
     // get 6 classes bases on highest total bookings using $sort aggregation
 
     app.get("/featured", async (req, res) => {
+      //   const pipeline = [{ $sort: { totalBookings: -1 } }, { $limit: 6 }];
+      //   const result = await classes.aggregate(pipeline).toArray();
+      //   res.send(result);
       const pipeline = [{ $sort: { totalBookings: -1 } }, { $limit: 6 }];
+      const topClasses = await classes.aggregate(pipeline).toArray();
+      const classNames = topClasses.map((c) => c.className);
 
-      const result = await classes.aggregate(pipeline).toArray();
-      res.send(result);
+      const classTrainers = await Promise.all(
+        classNames.map(async (className) => {
+          const classTrainers = await trainers
+            .find(
+              { areasOfExpertise: className },
+              { projection: { fullName: 1, profileImage: 1 } }
+            )
+            .limit(5)
+            .toArray();
+          return { className, trainers: classTrainers };
+        })
+      );
+
+      const featuredData = topClasses.map((classData) => {
+        const trainersForClass = classTrainers.find(
+          (c) => c.className === classData.className
+        );
+        return { ...classData, trainers: trainersForClass.trainers };
+      });
+
+      console.log(featuredData);
+      //   res.send(topClasses);
+      res.send(featuredData);
     });
   } finally {
     // Ensures that the client will close when you finish/error
