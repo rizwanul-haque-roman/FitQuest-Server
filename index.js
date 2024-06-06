@@ -51,6 +51,7 @@ async function run() {
     const classes = database.collection("classes");
     const trainers = database.collection("trainers");
     const testimonials = database.collection("testimonials");
+    const forumPosts = database.collection("forumPosts");
 
     /**
      * =============================================
@@ -58,8 +59,24 @@ async function run() {
      * =============================================
      */
 
-    app.get("/classes", async (req, res) => {
-      const result = await classes.find().toArray();
+    // app.get("/trainers", async (req, res) => {
+    //   const result = await trainers.find().toArray();
+    //   res.send(result);
+    // });
+
+    app.get("/totalPosts", async (req, res) => {
+      const count = await forumPosts.estimatedDocumentCount();
+      res.send({ count });
+    });
+
+    app.get("/posts", async (req, res) => {
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+      const result = await forumPosts
+        .find()
+        .skip(page * size)
+        .limit(size)
+        .toArray();
       res.send(result);
     });
 
