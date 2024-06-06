@@ -64,11 +64,13 @@ async function run() {
     //   res.send(result);
     // });
 
+    // ESTIMATED TOTAL POST
     app.get("/totalPosts", async (req, res) => {
       const count = await forumPosts.estimatedDocumentCount();
       res.send({ count });
     });
 
+    // API FOR FETCHING ALL THE POST
     app.get("/posts", async (req, res) => {
       const page = parseInt(req.query.page);
       const size = parseInt(req.query.size);
@@ -80,17 +82,25 @@ async function run() {
       res.send(result);
     });
 
+    // API FOR FETCHING TESTIMONIALS
     app.get("/testimonials", async (req, res) => {
       const result = await testimonials.find().toArray();
       res.send(result);
     });
 
-    // get 6 classes bases on highest total bookings using $sort aggregation
+    // API FOR FETCHING 6 RECENT FORUM POSTS
+    app.get("/recentPosts", async (req, res) => {
+      const recentPosts = await forumPosts
+        .find({})
+        .sort({ dateTime: -1 })
+        .limit(6)
+        .toArray();
 
+      res.send(recentPosts);
+    });
+
+    // API FOR FETCHING 6 CLASSES USING $SORT AGGREGATION
     app.get("/featured", async (req, res) => {
-      //   const pipeline = [{ $sort: { totalBookings: -1 } }, { $limit: 6 }];
-      //   const result = await classes.aggregate(pipeline).toArray();
-      //   res.send(result);
       const pipeline = [{ $sort: { totalBookings: -1 } }, { $limit: 6 }];
       const topClasses = await classes.aggregate(pipeline).toArray();
       const classNames = topClasses.map((c) => c.className);
@@ -115,7 +125,7 @@ async function run() {
         return { ...classData, trainers: trainersForClass.trainers };
       });
 
-      console.log(featuredData);
+      //   console.log(featuredData);
       res.send(featuredData);
     });
   } finally {
