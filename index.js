@@ -59,10 +59,23 @@ async function run() {
      * =============================================
      */
 
-    // app.get("/trainers", async (req, res) => {
-    //   const result = await trainers.find().toArray();
-    //   res.send(result);
-    // });
+    // ESTIMATED TOTAL TRAINERS
+    app.get("/totalTrainers", async (req, res) => {
+      const count = await trainers.estimatedDocumentCount();
+      res.send({ count });
+    });
+
+    // API FOR FETCHING ALL TRAINERS
+    app.get("/trainers", async (req, res) => {
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+      const result = await trainers
+        .find()
+        .skip(page * size)
+        .limit(size)
+        .toArray();
+      res.send(result);
+    });
 
     // ESTIMATED TOTAL POST
     app.get("/totalPosts", async (req, res) => {
