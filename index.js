@@ -98,9 +98,18 @@ async function run() {
 
       res.send(recentPosts);
     });
+    // API FOR MOST EXPERIENCED 3 TRAINERS TO DISPLAY IN THE HOMEPAGE
+    app.get("/featuredTrainers", async (req, res) => {
+      const result = await trainers
+        .find()
+        .sort({ yearsOfExperience: -1 })
+        .limit(3)
+        .toArray();
+      res.send(result);
+    });
 
     // API FOR FETCHING 6 CLASSES USING $SORT AGGREGATION
-    app.get("/featured", async (req, res) => {
+    app.get("/featuredClasses", async (req, res) => {
       const pipeline = [{ $sort: { totalBookings: -1 } }, { $limit: 6 }];
       const topClasses = await classes.aggregate(pipeline).toArray();
       const classNames = topClasses.map((c) => c.className);
@@ -109,7 +118,7 @@ async function run() {
         classNames.map(async (className) => {
           const classTrainers = await trainers
             .find(
-              { areasOfExpertise: className },
+              { classes: className },
               { projection: { fullName: 1, profileImage: 1 } }
             )
             .limit(5)
