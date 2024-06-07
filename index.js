@@ -14,7 +14,6 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(cookieParser());
 
 /**
  * =======================
@@ -52,6 +51,7 @@ async function run() {
     const trainers = database.collection("trainers");
     const testimonials = database.collection("testimonials");
     const forumPosts = database.collection("forumPosts");
+    const subscribers = database.collection("subscribers");
 
     /**
      * =============================================
@@ -127,6 +127,19 @@ async function run() {
 
       //   console.log(featuredData);
       res.send(featuredData);
+    });
+
+    /**
+     * =====================
+     * POST API
+     * =====================
+     */
+
+    app.post("/newsletter", async (req, res) => {
+      const subscriber = req.body;
+      console.log(subscriber);
+      const result = await subscribers.insertOne(subscriber);
+      res.send(result);
     });
   } finally {
     // Ensures that the client will close when you finish/error
