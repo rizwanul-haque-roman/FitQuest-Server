@@ -77,6 +77,15 @@ async function run() {
       res.send(result);
     });
 
+    // API FOR A SPECIFIC TRAINER DATA
+    app.get("/trainer/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await trainers.findOne(query);
+      console.log(query);
+      res.send(result);
+    });
+
     // ESTIMATED TOTAL POST
     app.get("/totalPosts", async (req, res) => {
       const count = await forumPosts.estimatedDocumentCount();
