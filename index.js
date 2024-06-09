@@ -53,6 +53,7 @@ async function run() {
     const forumPosts = database.collection("forumPosts");
     const subscribers = database.collection("subscribers");
     const users = database.collection("users");
+    const pricing = database.collection("pricing");
 
     /**
      * =============================================
@@ -75,6 +76,19 @@ async function run() {
         .skip(page * size)
         .limit(size)
         .toArray();
+      res.send(result);
+    });
+
+    // API FOR THE PRICING PLANS
+    app.get("/pricing", async (req, res) => {
+      const result = await pricing.find().toArray();
+      res.send(result);
+    });
+    // API FOR A SPECIFIC PRICING DATA
+    app.get("/pricing/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await pricing.findOne(query);
       res.send(result);
     });
 
