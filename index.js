@@ -52,6 +52,7 @@ async function run() {
     const testimonials = database.collection("testimonials");
     const forumPosts = database.collection("forumPosts");
     const subscribers = database.collection("subscribers");
+    const users = database.collection("users");
 
     /**
      * =============================================
@@ -82,7 +83,6 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await trainers.findOne(query);
-      console.log(query);
       res.send(result);
     });
 
@@ -170,6 +170,17 @@ async function run() {
       const subscriber = req.body;
       console.log(subscriber);
       const result = await subscribers.insertOne(subscriber);
+      res.send(result);
+    });
+
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email };
+      const existingUser = await users.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "user already exists", insertedId: null });
+      }
+      const result = await users.insertOne(user);
       res.send(result);
     });
   } finally {
