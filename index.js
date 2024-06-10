@@ -56,6 +56,7 @@ async function run() {
     const subscribers = database.collection("subscribers");
     const users = database.collection("users");
     const pricing = database.collection("pricing");
+    const payments = database.collection("payments");
 
     /**
      * =============================================
@@ -186,6 +187,13 @@ async function run() {
       const subscriber = req.body;
       console.log(subscriber);
       const result = await subscribers.insertOne(subscriber);
+      res.send(result);
+    });
+
+    app.post("/payments", async (req, res) => {
+      const paymentData = req.body;
+      console.log(paymentData);
+      const result = await payments.insertOne(paymentData);
       res.send(result);
     });
 
