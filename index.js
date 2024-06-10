@@ -57,6 +57,7 @@ async function run() {
     const users = database.collection("users");
     const pricing = database.collection("pricing");
     const payments = database.collection("payments");
+    const appliedTrainers = database.collection("appliedTrainers");
 
     /**
      * =============================================
@@ -185,14 +186,18 @@ async function run() {
 
     app.post("/newsletter", async (req, res) => {
       const subscriber = req.body;
-      console.log(subscriber);
       const result = await subscribers.insertOne(subscriber);
+      res.send(result);
+    });
+
+    app.post("/appliedTrainer", async (req, res) => {
+      const applicationData = req.body;
+      const result = await appliedTrainers.insertOne(applicationData);
       res.send(result);
     });
 
     app.post("/payments", async (req, res) => {
       const paymentData = req.body;
-      console.log(paymentData);
       const result = await payments.insertOne(paymentData);
       res.send(result);
     });
