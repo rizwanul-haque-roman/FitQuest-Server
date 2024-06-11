@@ -104,6 +104,47 @@ async function run() {
       res.send(result);
     });
 
+    // ESTIMATED TOTAL CLASSES
+    app.get("/totalClasses", async (req, res) => {
+      const count = await classes.estimatedDocumentCount();
+      res.send({ count });
+    });
+
+    // API FOR FETCHING ALL THE classes
+    app.get("/classes", async (req, res) => {
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+      const allClasses = await classes
+        .find()
+        .skip(page * size)
+        .limit(size)
+        .toArray();
+
+      const classNames = allClasses.map((c) => c.className);
+
+      const classTrainers = await Promise.all(
+        classNames.map(async (className) => {
+          const classTrainers = await trainers
+            .find(
+              { classes: className },
+              { projection: { fullName: 1, profileImage: 1, _id: 1 } }
+            )
+            .limit(5)
+            .toArray();
+          return { className, trainers: classTrainers };
+        })
+      );
+
+      const classesWithTrainers = allClasses.map((classData) => {
+        const trainersForClass = classTrainers.find(
+          (c) => c.className === classData.className
+        );
+        return { ...classData, trainers: trainersForClass.trainers };
+      });
+
+      res.send(classesWithTrainers);
+    });
+
     // ESTIMATED TOTAL POST
     app.get("/totalPosts", async (req, res) => {
       const count = await forumPosts.estimatedDocumentCount();
@@ -159,7 +200,7 @@ async function run() {
           const classTrainers = await trainers
             .find(
               { classes: className },
-              { projection: { fullName: 1, profileImage: 1 } }
+              { projection: { fullName: 1, profileImage: 1, _id: 1 } }
             )
             .limit(5)
             .toArray();
