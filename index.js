@@ -176,6 +176,11 @@ async function run() {
       const result = await testimonials.find().toArray();
       res.send(result);
     });
+    // API FOR FETCHING subscribers
+    app.get("/subscribers", async (req, res) => {
+      const result = await subscribers.find().toArray();
+      res.send(result);
+    });
 
     // API FOR FETCHING 6 RECENT FORUM POSTS
     app.get("/recentPosts", async (req, res) => {
