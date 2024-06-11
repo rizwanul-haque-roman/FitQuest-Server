@@ -251,6 +251,30 @@ async function run() {
       res.send(featuredData);
     });
 
+    // API FOR FETCHING APPLIED TRAINER DATA ON THE DASHBOARD
+    app.get("/appliedTrainersDashboard", async (req, res) => {
+      const query = { status: "pending" };
+      const result = await trainers
+        .find(query, {
+          projection: {
+            fullName: 1,
+            email: 1,
+            profileImage: 1,
+            _id: 1,
+          },
+        })
+        .toArray();
+      res.send(result);
+    });
+
+    // API FOR FETCHING APPLIED TRAINER'S DETAILS DATA
+    app.get("/appliedTrainers/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await trainers.findOne(query);
+      res.send(result);
+    });
+
     /**
      * =====================
      * POST API
@@ -265,7 +289,7 @@ async function run() {
 
     app.post("/appliedTrainer", async (req, res) => {
       const applicationData = req.body;
-      const result = await appliedTrainers.insertOne(applicationData);
+      const result = await trainers.insertOne(applicationData);
       res.send(result);
     });
 
