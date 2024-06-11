@@ -163,6 +163,14 @@ async function run() {
       res.send(result);
     });
 
+    // API FOR A SINGLE POST DATA
+    app.get("/post/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await forumPosts.findOne(query);
+      res.send(result);
+    });
+
     // API FOR FETCHING TESTIMONIALS
     app.get("/testimonials", async (req, res) => {
       const result = await testimonials.find().toArray();
