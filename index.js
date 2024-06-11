@@ -67,7 +67,8 @@ async function run() {
 
     // ESTIMATED TOTAL TRAINERS
     app.get("/totalTrainers", async (req, res) => {
-      const count = await trainers.estimatedDocumentCount();
+      const query = { role: "trainer" };
+      const count = await trainers.countDocuments(query);
       res.send({ count });
     });
 
@@ -75,10 +76,28 @@ async function run() {
     app.get("/trainers", async (req, res) => {
       const page = parseInt(req.query.page);
       const size = parseInt(req.query.size);
+      const query = { role: "trainer" };
       const result = await trainers
-        .find()
+        .find(query)
         .skip(page * size)
         .limit(size)
+        .toArray();
+      res.send(result);
+    });
+
+    // API FOR FETCHING ALL TRAINERS IN DASHBOARD
+    app.get("/dashboard/trainers", async (req, res) => {
+      const query = { role: "trainer" };
+      const result = await trainers
+        .find(query, {
+          projection: {
+            fullName: 1,
+            email: 1,
+            profileImage: 1,
+            _id: 1,
+            role: 1,
+          },
+        })
         .toArray();
       res.send(result);
     });
@@ -280,6 +299,27 @@ async function run() {
       res.send({
         clientSecret: paymentIntent.client_secret,
       });
+    });
+
+    /**
+     * =====================
+     * PUT & PATCH API
+     * =====================
+     */
+
+    app.patch("/trainerToMember", async (req, res) => {
+      const id = req.query.id;
+      console.log(id);
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: false };
+      const updatedTrainer = {
+        $set: {
+          role: "member",
+        },
+      };
+
+      const result = await trainers.updateOne(filter, updatedTrainer, options);
+      res.send(result);
     });
   } finally {
     // Ensures that the client will close when you finish/error
