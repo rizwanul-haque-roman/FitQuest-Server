@@ -118,6 +118,14 @@ async function run() {
       res.send(result);
     });
 
+    // API FOR A SPECIFIC TRAINER DATA IN DASHBOARD
+    app.get("/trainerDashboard", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const result = await trainers.findOne(query);
+      res.send(result);
+    });
+
     // API FOR A SPECIFIC TRAINER DATA
     app.get("/trainer/:id", async (req, res) => {
       const id = req.params.id;
@@ -419,6 +427,24 @@ async function run() {
       // console.log(approvedTrainer);
 
       const result = await trainers.updateOne(filter, approvedTrainer, options);
+      res.send(result);
+    });
+
+    app.patch("/updateSlot", async (req, res) => {
+      const updatedData = req.body;
+      const email = req.query.email;
+      const filter = { email: email };
+      const options = { upsert: false };
+      const slotAndClass = {
+        $set: {
+          availableDays: updatedData.days,
+          slotsAvailable: updatedData.slotsAvailable,
+          classes: updatedData.classes,
+        },
+      };
+      // console.log(slotAndClass);
+
+      const result = await trainers.updateOne(filter, slotAndClass, options);
       res.send(result);
     });
   } finally {
