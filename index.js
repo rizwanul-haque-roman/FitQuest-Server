@@ -68,6 +68,13 @@ async function run() {
      * =============================================
      */
 
+    app.get("/userData", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const result = await users.find(query).toArray();
+      res.send(result);
+    });
+
     // ESTIMATED TOTAL TRAINERS
     app.get("/totalTrainers", async (req, res) => {
       const query = { role: "trainer" };
@@ -334,6 +341,13 @@ async function run() {
       });
     });
 
+    app.get("/bookingData", async (req, res) => {
+      const name = req.query.name;
+      const query = { trainer: name };
+      const result = await payments.find(query).toArray();
+      res.send(result);
+    });
+
     /**
      * =====================
      * POST API
@@ -343,6 +357,12 @@ async function run() {
     app.post("/classes", async (req, res) => {
       const classData = req.body;
       const result = await classes.insertOne(classData);
+      res.send(result);
+    });
+
+    app.post("/forumPost", async (req, res) => {
+      const postData = req.body;
+      const result = await forumPosts.insertOne(postData);
       res.send(result);
     });
 
@@ -399,23 +419,38 @@ async function run() {
     // UPDATING THE TRAINER TO MEMBER
     app.patch("/trainerToMember", async (req, res) => {
       const id = req.query.id;
+      const email = req.query.email;
       console.log(id);
       const filter = { _id: new ObjectId(id) };
+      const filter2 = { email: email };
       const options = { upsert: false };
       const updatedTrainer = {
         $set: {
           role: "member",
         },
       };
+      const changeUserRole = {
+        $set: {
+          role: "member",
+        },
+      };
 
       const result = await trainers.updateOne(filter, updatedTrainer, options);
-      res.send(result);
+
+      const updateRole = await users.updateOne(
+        filter2,
+        changeUserRole,
+        options
+      );
+      res.send({ result, updateRole });
     });
     // UPDATING THE PENDING APPLICANT TO TRAINER
     app.patch("/memberToTrainer", async (req, res) => {
       const applicant = req.body;
       const id = applicant.id;
+      const email = applicant.email;
       const filter = { _id: new ObjectId(id) };
+      const filter2 = { email: email };
       const options = { upsert: false };
       const approvedTrainer = {
         $set: {
@@ -424,10 +459,20 @@ async function run() {
           classes: applicant.classes,
         },
       };
+      const changeUserRole = {
+        $set: {
+          role: applicant.role,
+        },
+      };
       // console.log(approvedTrainer);
 
       const result = await trainers.updateOne(filter, approvedTrainer, options);
-      res.send(result);
+      const updateRole = await users.updateOne(
+        filter2,
+        changeUserRole,
+        options
+      );
+      res.send({ result, updateRole });
     });
 
     app.patch("/updateSlot", async (req, res) => {
@@ -445,6 +490,18 @@ async function run() {
       // console.log(slotAndClass);
 
       const result = await trainers.updateOne(filter, slotAndClass, options);
+      res.send(result);
+    });
+    /**
+     * =====================
+     * DELETE API
+     * =====================
+     */
+
+    app.delete("/slotDeletion", async (req, res) => {
+      const id = req.query.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await payments.deleteOne(query);
       res.send(result);
     });
   } finally {
