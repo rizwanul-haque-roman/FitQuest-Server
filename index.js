@@ -416,6 +416,25 @@ async function run() {
      * =====================
      */
 
+    // REJECTING THE TRAINER
+    app.patch("/rejection", async (req, res) => {
+      const applicant = req.body;
+      const id = applicant.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const approvedTrainer = {
+        $set: {
+          role: applicant.role,
+          status: applicant.status,
+          feedback: applicant.feedback,
+        },
+      };
+      // console.log(approvedTrainer);
+
+      const result = await trainers.updateOne(filter, approvedTrainer, options);
+      res.send(result);
+    });
+
     // UPDATING THE TRAINER TO MEMBER
     app.patch("/trainerToMember", async (req, res) => {
       const id = req.query.id;
