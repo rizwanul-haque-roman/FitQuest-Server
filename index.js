@@ -11,7 +11,11 @@ const port = process.env.PORT || 3000;
 
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://fitquest-bd.web.app",
+      "https://fitquest-bd.firebase.app",
+    ],
     credentials: true,
   })
 );
@@ -36,12 +40,12 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
 
     /**
      * =============================================
@@ -57,7 +61,6 @@ async function run() {
     const users = database.collection("users");
     const pricing = database.collection("pricing");
     const payments = database.collection("payments");
-    const appliedTrainers = database.collection("appliedTrainers");
 
     /**
      * =============================================
@@ -213,8 +216,9 @@ async function run() {
     });
     // API FOR MOST EXPERIENCED 3 TRAINERS TO DISPLAY IN THE HOMEPAGE
     app.get("/featuredTrainers", async (req, res) => {
+      const query = { role: "trainer" };
       const result = await trainers
-        .find()
+        .find(query)
         .sort({ yearsOfExperience: -1 })
         .limit(3)
         .toArray();
@@ -275,6 +279,48 @@ async function run() {
       res.send(result);
     });
 
+    // API FOR LATEST 6 PAYMENT
+    app.get("/payments", async (req, res) => {
+      const result = await payments.find().sort({ _id: -1 }).limit(6).toArray();
+      res.send(result);
+    });
+
+    // API FOR GETTING THE TOTAL BALANCE
+    app.get("/totalBalance", async (req, res) => {
+      const result = await payments
+        .aggregate([
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$price" },
+            },
+          },
+        ])
+        .toArray();
+      const totalBalance = result.length ? result[0].total : 0;
+      res.send({ total: totalBalance });
+    });
+
+    // API FOR TOTAL PAID MEMEBERS AND TOTAL SUBS
+    app.get("/subMember", async (req, res) => {
+      const totalSubscribers = await subscribers.countDocuments();
+
+      const uniquePaidMembersAggregation = await payments
+        .aggregate([
+          { $group: { _id: "$memberEmail" } },
+          { $count: "uniquePaidMembers" },
+        ])
+        .toArray();
+
+      const uniquePaidMembers =
+        uniquePaidMembersAggregation[0]?.uniquePaidMembers || 0;
+
+      res.send({
+        totalSubscribers,
+        totalPaidMembers: uniquePaidMembers,
+      });
+    });
+
     /**
      * =====================
      * POST API
@@ -331,6 +377,7 @@ async function run() {
      * =====================
      */
 
+    // UPDATING THE TRAINER TO MEMBER
     app.patch("/trainerToMember", async (req, res) => {
       const id = req.query.id;
       console.log(id);
@@ -343,6 +390,24 @@ async function run() {
       };
 
       const result = await trainers.updateOne(filter, updatedTrainer, options);
+      res.send(result);
+    });
+    // UPDATING THE PENDING APPLICANT TO TRAINER
+    app.patch("/memberToTrainer", async (req, res) => {
+      const applicant = req.body;
+      const id = applicant.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: false };
+      const approvedTrainer = {
+        $set: {
+          role: applicant.role,
+          status: applicant.status,
+          classes: applicant.classes,
+        },
+      };
+      // console.log(approvedTrainer);
+
+      const result = await trainers.updateOne(filter, approvedTrainer, options);
       res.send(result);
     });
   } finally {
