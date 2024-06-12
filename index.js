@@ -148,7 +148,12 @@ async function run() {
         classNames.map(async (className) => {
           const classTrainers = await trainers
             .find(
-              { classes: className },
+              // { classes: className },
+              {
+                classes: {
+                  $regex: new RegExp(`^${className.split(" ")[0]}`, "i"),
+                },
+              },
               { projection: { fullName: 1, profileImage: 1, _id: 1 } }
             )
             .limit(5)
@@ -326,6 +331,12 @@ async function run() {
      * POST API
      * =====================
      */
+
+    app.post("/classes", async (req, res) => {
+      const classData = req.body;
+      const result = await classes.insertOne(classData);
+      res.send(result);
+    });
 
     app.post("/newsletter", async (req, res) => {
       const subscriber = req.body;
