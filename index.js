@@ -415,6 +415,18 @@ async function run() {
      * PUT & PATCH API
      * =====================
      */
+    app.patch("/users", async (req, res) => {
+      const user = req.body;
+      const filter = { email: user.email };
+      const options = { upsert: false };
+      const userInfo = {
+        $set: {
+          lastLogin: user?.lastLogin,
+        },
+      };
+      const result = await users.updateOne(filter, userInfo, options);
+      res.send(result);
+    });
 
     // REJECTING THE TRAINER
     app.patch("/rejection", async (req, res) => {
