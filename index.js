@@ -428,6 +428,22 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/userUpdate", async (req, res) => {
+      const user = req.body;
+      const id = user.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: false };
+      const userInfo = {
+        $set: {
+          name: user.name,
+          lastLogin: user.lastLogin,
+          photoURL: user.profilePicture,
+        },
+      };
+      const result = await users.updateOne(filter, userInfo, options);
+      res.send(result);
+    });
+
     // REJECTING THE TRAINER
     app.patch("/rejection", async (req, res) => {
       const applicant = req.body;
