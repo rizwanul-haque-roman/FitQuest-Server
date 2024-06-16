@@ -160,6 +160,57 @@ async function run() {
     });
 
     // API FOR FETCHING ALL THE classes
+    app.get("/classesSearch", async (req, res) => {
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+      const search = req.query.search;
+      console.log("Search term:", search);
+
+      // Query to search for classes based on the search term
+      const query = { className: { $regex: search, $options: "i" } };
+
+      // Fetch the classes with pagination
+      const allClasses = await classes
+        .find(query)
+        .skip(page * size)
+        .limit(size)
+        .toArray();
+
+      // Fetch trainers for each class
+      const classNames = allClasses.map((c) => c.className);
+
+      const classTrainers = await Promise.all(
+        classNames.map(async (className) => {
+          const trainersForClass = await trainers
+            .find(
+              {
+                classes: {
+                  $regex: new RegExp(`^${className.split(" ")[0]}`, "i"),
+                },
+              },
+              { projection: { fullName: 1, profileImage: 1, _id: 1 } }
+            )
+            .limit(5)
+            .toArray();
+          return { className, trainers: trainersForClass };
+        })
+      );
+
+      // Combine classes with their respective trainers
+      const classesWithTrainers = allClasses.map((classData) => {
+        const trainersForClass = classTrainers.find(
+          (c) => c.className === classData.className
+        );
+        return {
+          ...classData,
+          trainers: trainersForClass ? trainersForClass.trainers : [],
+        };
+      });
+
+      res.send(classesWithTrainers);
+
+      // console.log(allClasses);
+    });
     app.get("/classes", async (req, res) => {
       const page = parseInt(req.query.page);
       const size = parseInt(req.query.size);
