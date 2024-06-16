@@ -360,6 +360,16 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/applicationStatus", async (req, res) => {
+      const email = req.query.email;
+      const query = { email: email };
+      const options = {
+        projection: { status: 1, feedback: 1 },
+      };
+      const result = await trainers.find(query, options).toArray();
+      res.send(result);
+    });
+
     /**
      * =====================
      * POST API
