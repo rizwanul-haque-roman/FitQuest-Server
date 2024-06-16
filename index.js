@@ -64,18 +64,71 @@ async function run() {
 
     /**
      * =============================================
+     *                AUTH RELATED API
+     * =============================================
+     */
+
+    // JWT
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
+
+    // VERIFY TOKEN
+    const verifyToken = (req, res, next) => {
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: "unauthorized access" });
+      }
+      const token = req.headers.authorization.split(" ")[1];
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(401).send({ message: "unauthorized access" });
+        }
+        req.decoded = decoded;
+        next();
+      });
+    };
+
+    // VERIFY ADMIN
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await users.findOne(query);
+      const isAdmin = user?.role === "admin";
+      if (!isAdmin) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
+
+    // VERIFY TRAINER
+    const verifyTrainer = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await users.findOne(query);
+      const isAdmin = user?.role === "trainer";
+      if (!isAdmin) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
+    /**
+     * =============================================
      *                GET API
      * =============================================
      */
 
-    app.get("/userData", async (req, res) => {
+    app.get("/userData", verifyToken, async (req, res) => {
       const email = req.query.email;
       const query = { email: email };
       const result = await users.find(query).toArray();
       res.send(result);
     });
 
-    app.get("/bookedTrainer", async (req, res) => {
+    app.get("/bookedTrainer", verifyToken, async (req, res) => {
       const email = req.query.email;
       const query = { memberEmail: email };
       const options = {
@@ -108,29 +161,34 @@ async function run() {
     });
 
     // API FOR FETCHING ALL TRAINERS IN DASHBOARD
-    app.get("/dashboard/trainers", async (req, res) => {
-      const query = { role: "trainer" };
-      const result = await trainers
-        .find(query, {
-          projection: {
-            fullName: 1,
-            email: 1,
-            profileImage: 1,
-            _id: 1,
-            role: 1,
-          },
-        })
-        .toArray();
-      res.send(result);
-    });
+    app.get(
+      "/dashboard/trainers",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const query = { role: "trainer" };
+        const result = await trainers
+          .find(query, {
+            projection: {
+              fullName: 1,
+              email: 1,
+              profileImage: 1,
+              _id: 1,
+              role: 1,
+            },
+          })
+          .toArray();
+        res.send(result);
+      }
+    );
 
     // API FOR THE PRICING PLANS
-    app.get("/pricing", async (req, res) => {
+    app.get("/pricing", verifyToken, async (req, res) => {
       const result = await pricing.find().toArray();
       res.send(result);
     });
     // API FOR A SPECIFIC PRICING DATA
-    app.get("/pricing/:id", async (req, res) => {
+    app.get("/pricing/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await pricing.findOne(query);
@@ -138,12 +196,17 @@ async function run() {
     });
 
     // API FOR A SPECIFIC TRAINER DATA IN DASHBOARD
-    app.get("/trainerDashboard", async (req, res) => {
-      const email = req.query.email;
-      const query = { email: email };
-      const result = await trainers.findOne(query);
-      res.send(result);
-    });
+    app.get(
+      "/trainerDashboard",
+      verifyToken,
+      verifyTrainer,
+      async (req, res) => {
+        const email = req.query.email;
+        const query = { email: email };
+        const result = await trainers.findOne(query);
+        res.send(result);
+      }
+    );
 
     // API FOR A SPECIFIC TRAINER DATA
     app.get("/trainer/:id", async (req, res) => {
@@ -282,7 +345,7 @@ async function run() {
       res.send(result);
     });
     // API FOR FETCHING subscribers
-    app.get("/subscribers", async (req, res) => {
+    app.get("/subscribers", verifyToken, verifyAdmin, async (req, res) => {
       const result = await subscribers.find().toArray();
       res.send(result);
     });
@@ -339,37 +402,47 @@ async function run() {
     });
 
     // API FOR FETCHING APPLIED TRAINER DATA ON THE DASHBOARD
-    app.get("/appliedTrainersDashboard", async (req, res) => {
-      const query = { status: "pending" };
-      const result = await trainers
-        .find(query, {
-          projection: {
-            fullName: 1,
-            email: 1,
-            profileImage: 1,
-            _id: 1,
-          },
-        })
-        .toArray();
-      res.send(result);
-    });
+    app.get(
+      "/appliedTrainersDashboard",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const query = { status: "pending" };
+        const result = await trainers
+          .find(query, {
+            projection: {
+              fullName: 1,
+              email: 1,
+              profileImage: 1,
+              _id: 1,
+            },
+          })
+          .toArray();
+        res.send(result);
+      }
+    );
 
     // API FOR FETCHING APPLIED TRAINER'S DETAILS DATA
-    app.get("/appliedTrainers/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await trainers.findOne(query);
-      res.send(result);
-    });
+    app.get(
+      "/appliedTrainers/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await trainers.findOne(query);
+        res.send(result);
+      }
+    );
 
     // API FOR LATEST 6 PAYMENT
-    app.get("/payments", async (req, res) => {
+    app.get("/payments", verifyToken, verifyAdmin, async (req, res) => {
       const result = await payments.find().sort({ _id: -1 }).limit(6).toArray();
       res.send(result);
     });
 
     // API FOR GETTING THE TOTAL BALANCE
-    app.get("/totalBalance", async (req, res) => {
+    app.get("/totalBalance", verifyToken, verifyAdmin, async (req, res) => {
       const result = await payments
         .aggregate([
           {
@@ -404,14 +477,14 @@ async function run() {
       });
     });
 
-    app.get("/bookingData", async (req, res) => {
+    app.get("/bookingData", verifyToken, verifyTrainer, async (req, res) => {
       const name = req.query.name;
       const query = { trainer: name };
       const result = await payments.find(query).toArray();
       res.send(result);
     });
 
-    app.get("/applicationStatus", async (req, res) => {
+    app.get("/applicationStatus", verifyToken, async (req, res) => {
       const email = req.query.email;
       const query = { email: email };
       const options = {
@@ -427,7 +500,7 @@ async function run() {
      * =====================
      */
 
-    app.post("/classes", async (req, res) => {
+    app.post("/classes", verifyToken, verifyAdmin, async (req, res) => {
       const classData = req.body;
       const result = await classes.insertOne(classData);
       res.send(result);
@@ -439,7 +512,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/forumPost", async (req, res) => {
+    app.post("/forumPost", verifyToken, async (req, res) => {
       const postData = req.body;
       const result = await forumPosts.insertOne(postData);
       res.send(result);
@@ -451,7 +524,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/appliedTrainer", async (req, res) => {
+    app.post("/appliedTrainer", verifyToken, async (req, res) => {
       const applicationData = req.body;
       const result = await trainers.insertOne(applicationData);
       res.send(result);
@@ -507,7 +580,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/userUpdate", async (req, res) => {
+    app.patch("/userUpdate", verifyToken, async (req, res) => {
       const user = req.body;
       const id = user.id;
       const filter = { _id: new ObjectId(id) };
