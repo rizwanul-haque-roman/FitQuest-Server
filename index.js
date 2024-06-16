@@ -75,6 +75,18 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/bookedTrainer", async (req, res) => {
+      const email = req.query.email;
+      const query = { memberEmail: email };
+      const options = {
+        sort: { _id: 1 },
+        projection: { trainerId: 1 },
+        limit: 1,
+      };
+      const result = await payments.find(query, options).toArray();
+      res.send(result);
+    });
+
     // ESTIMATED TOTAL TRAINERS
     app.get("/totalTrainers", async (req, res) => {
       const query = { role: "trainer" };
@@ -357,6 +369,12 @@ async function run() {
     app.post("/classes", async (req, res) => {
       const classData = req.body;
       const result = await classes.insertOne(classData);
+      res.send(result);
+    });
+
+    app.post("/testimonials", async (req, res) => {
+      const review = req.body;
+      const result = await testimonials.insertOne(review);
       res.send(result);
     });
 
