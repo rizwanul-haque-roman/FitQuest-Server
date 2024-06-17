@@ -567,6 +567,20 @@ async function run() {
      * PUT & PATCH API
      * =====================
      */
+    app.patch("/upvote", async (req, res) => {
+      const id = req.query.postId;
+      const upvote = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: false };
+      const updateUpvote = {
+        $set: {
+          likes: upvote?.like,
+        },
+      };
+      const result = await forumPosts.updateOne(filter, updateUpvote, options);
+      res.send(result);
+    });
+
     app.patch("/users", async (req, res) => {
       const user = req.body;
       const filter = { email: user.email };
